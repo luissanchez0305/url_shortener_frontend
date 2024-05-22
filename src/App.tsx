@@ -1,26 +1,89 @@
 import React from 'react';
-import logo from './logo.svg';
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  useParams,
+} from 'react-router-dom';
+import axios, { AxiosError } from 'axios';
 import './App.css';
 
-function App() {
+const Home: React.FC = () => {
+  const [originalUrl, setOriginalUrl] = React.useState('');
+  const [shortenedUrl, setShortenedUrl] = React.useState('');
+  const [shorteningStatus, setShorteningStataus] = React.useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try { 
+      const response = await axios.post('http://127.0.0.1:8000/api/shorten', { original_url: originalUrl });
+      setShorteningStataus('');
+      setShortenedUrl(`http://127.0.0.1:3000/${response.data.shortened_url}`);
+    } catch (error: any) {
+      setShortenedUrl('');
+      const { message } = (error as AxiosError).response?.data as any;
+      console.error('Error shortening the URL', message);
+      setShorteningStataus(message);
+    }
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="container">
+      <div className="url-shortener">
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            value={originalUrl}
+            onChange={(e) => setOriginalUrl(e.target.value)}
+            placeholder="Enter URL to shorten"
+            className="url-input"
+          />
+          <button type="submit" className="shorten-button">Shorten</button>
+        </form>
+        {shorteningStatus && (
+          <p>{shorteningStatus}</p>
+        )}
+        {shortenedUrl && (
+          <div className="result">
+            <p>Shortened URL:</p>
+            <a href={shortenedUrl} target="_blank" rel="noopener noreferrer">
+              {shortenedUrl}
+            </a>
+          </div>
+        )}
+      </div>
     </div>
+    );
+  };
+
+const Redirect: React.FC = () => {
+  const { hash } = useParams<{ hash: string }>();
+
+  React.useEffect(() => {
+    const fetchOriginalUrl = async () => {
+      try {
+        const response = await axios.get(`http://127.0.0.1:8000/api/${hash}`);
+        window.location.href = response.data;
+      } catch (error) {
+        console.error('Error fetching the original URL', error);
+      }
+    };
+
+    fetchOriginalUrl();
+  }, [hash]);
+
+  return <p>Redirecting...</p>;
+};
+
+const App: React.FC = () => {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/:hash" element={<Redirect />} />
+      </Routes>
+    </Router>
   );
-}
+};
 
 export default App;
