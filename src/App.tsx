@@ -16,9 +16,9 @@ const Home: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try { 
-      const response = await axios.post('http://127.0.0.1:8000/api/shorten', { original_url: originalUrl });
+      const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/shorten`, { original_url: originalUrl });
       setShorteningStataus('');
-      setShortenedUrl(`http://127.0.0.1:3000/${response.data.shortened_url}`);
+      setShortenedUrl(`${window.location.href}${response.data.shortened_url}`);
     } catch (error: any) {
       setShortenedUrl('');
       const { message } = (error as AxiosError).response?.data as any;
@@ -62,7 +62,7 @@ const Redirect: React.FC = () => {
   React.useEffect(() => {
     const fetchOriginalUrl = async () => {
       try {
-        const response = await axios.get(`http://127.0.0.1:8000/api/${hash}`);
+        const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/${hash}`);
         window.location.href = response.data;
       } catch (error) {
         console.error('Error fetching the original URL', error);
